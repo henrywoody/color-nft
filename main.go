@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
-	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/henrywoody/color-nft/ipfs"
+	"github.com/henrywoody/color-nft/token"
 )
 
 func init() {
@@ -38,64 +38,28 @@ func main() {
 	mkDirIfNotExists(metaDataDirPath)
 
 	now := time.Now().Unix()
-	imageFilePath := filepath.Join(imagesDirPath, fmt.Sprintf("%d.svg", now))
-	metaDataFilePath := filepath.Join(metaDataDirPath, fmt.Sprintf("%d.json", now))
+	t := token.NewToken(strconv.Itoa(int(now)), imagesDirPath, metaDataDirPath)
 
-	color, err := generateImage(imageFilePath)
-	if err != nil {
-		panic(fmt.Errorf("failed to create image: %v", err))
-	}
-
-	imageURI, err := ipfsNode.AddFile(ctx, imageFilePath)
-	if err != nil {
+	if err := t.GenerateImage(); err != nil {
 		panic(err)
 	}
 
-	metaData := TokenMetaData{
-		Image: imageURI,
-		Color: color,
-	}
-
-	metaDataFile, err := os.Create(metaDataFilePath)
+	imageURI, err := ipfsNode.AddFile(ctx, t.ImageFilePath())
 	if err != nil {
-		panic(fmt.Errorf("failed to create meta data file: %v", err))
+		panic(err)
+	}
+	t.SetImageURI(imageURI)
+
+	if err := t.WriteMetaData(); err != nil {
+		panic(err)
 	}
 
-	if err := json.NewEncoder(metaDataFile).Encode(metaData); err != nil {
-		panic(fmt.Errorf("failed to write to meta data file: %v", err))
-	}
-
-	metaDataURI, err := ipfsNode.AddFile(ctx, metaDataFilePath)
+	metaDataURI, err := ipfsNode.AddFile(ctx, t.MetaDataFilePath())
 	if err != nil {
 		panic(err)
 	}
 
 	log.Printf("Metadata URI: %s\n", metaDataURI)
-}
-
-const imageTmpl = `<?xml version="1.0"?>
-<svg width="1600" height="900"
-     xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink">
-<rect x="0" y="0" width="1600" height="900" style="fill: %s;" />
-</svg>
-`
-
-func generateImage(outFilePath string) (string, error) {
-	color := getRandomColor()
-	fileContent := fmt.Sprintf(imageTmpl, color)
-	err := os.WriteFile(outFilePath, []byte(fileContent), 0664)
-	if err != nil {
-		return "", err
-	}
-	return color, nil
-}
-
-func getRandomColor() string {
-	r := rand.Intn(256)
-	g := rand.Intn(256)
-	b := rand.Intn(256)
-	return fmt.Sprintf("#%02x%02x%02x", r, g, b)
 }
 
 func mkDirIfNotExists(dirPath string) error {
