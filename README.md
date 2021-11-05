@@ -1,6 +1,12 @@
 # Color NFT
 
-A simple NFT.
+A simple ERC721 non-fungible token (NFT).
+
+## ERC721
+
+Standard: https://eips.ethereum.org/EIPS/eip-721
+
+Implementation library: https://github.com/OpenZeppelin/openzeppelin-contracts
 
 ## IPFS
 
