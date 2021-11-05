@@ -13,6 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+sol_deps/
 
 .DS_Store
 
@@ -23,3 +24,4 @@
 # Generated files
 images/
 metadata/
+Token-CompileReady.sol
