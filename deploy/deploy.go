@@ -16,14 +16,14 @@ func main() {
 }
 
 func deploy() error {
-	c, err := client.GetClient()
+	c, err := client.NewClient()
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
 	ctx := context.Background()
-	auth, err := client.GetAuth(ctx, c)
+	auth, err := c.GetAuth(ctx)
 
 	address, tx, _, err := contract.DeployColorNFT(auth, c)
 	if err != nil {
