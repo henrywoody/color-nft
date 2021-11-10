@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/henrywoody/color-nft/ipfs"
-	"github.com/henrywoody/color-nft/mint"
 	"github.com/henrywoody/color-nft/token"
 )
 
@@ -39,12 +38,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	metaDataURI, err := createTokenData(ctx)
+	_, err := createTokenData(ctx)
 	if err != nil {
-		panic(err)
-	}
-
-	if err := mint.Mint(ctx, toAddrHex, metaDataURI); err != nil {
 		panic(err)
 	}
 }

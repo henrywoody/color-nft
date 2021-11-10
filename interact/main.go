@@ -8,10 +8,10 @@ import (
 
 func main() {
 	var tokenID int64
-	flag.Int64Var(&tokenID, "t", 0, "The token ID.")
+	flag.Int64Var(&tokenID, "t", -1, "The token ID.")
 	flag.Parse()
 
-	if tokenID == 0 {
+	if tokenID == -1 {
 		log.Fatal("Token ID is required")
 	}
 

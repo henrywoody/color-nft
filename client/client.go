@@ -35,8 +35,8 @@ var chainIDs = map[string]int64{
 	"geth-private": 1337,
 }
 
-func (c *Client) GetAuth(ctx context.Context) (*bind.TransactOpts, error) {
-	privateKey, err := crypto.HexToECDSA(os.Getenv("PRIVATE_KEY"))
+func (c *Client) GetAuth(ctx context.Context, privateKeyHex string) (*bind.TransactOpts, error) {
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("error converting private key hex to ECDSA: %v", err)
 	}

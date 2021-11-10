@@ -60,7 +60,7 @@ Console: https://geth.ethereum.org/docs/rpc/server
 
    ```shell
    go build -o interact.exe ./interact # this one takes a while to compile so `go run` is not recommended
-   ./interact.exe -t 1
+   ./interact.exe -t 0
    ```
 
 ### Managing Accounts

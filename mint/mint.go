@@ -1,16 +1,26 @@
-package mint
+package main
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/henrywoody/color-nft/client"
 )
 
-func Mint(ctx context.Context, toAddrHex, tokenURI string) error {
+const tokenPrice int64 = 50_000_000_000_000_000 // must match that in Token.sol
+
+func main() {
+	ctx := context.Background()
+	numTokens := 1
+	if err := mint(ctx, numTokens, os.Getenv("PRIVATE_KEY")); err != nil {
+		panic(err)
+	}
+}
+
+func mint(ctx context.Context, numTokens int, privateKeyHex string) error {
 	c, err := client.NewClient()
 	if err != nil {
 		return err
@@ -29,15 +39,18 @@ func Mint(ctx context.Context, toAddrHex, tokenURI string) error {
 	}
 	log.Printf("Found contract: %s (%s)\n", name, contractAddrHex)
 
-	auth, err := c.GetAuth(ctx)
+	auth, err := c.GetAuth(ctx, privateKeyHex)
+	if err != nil {
+		return err
+	}
 
-	toAddr := common.HexToAddress(toAddrHex)
-	tx, err := instance.Mint(auth, toAddr, tokenURI)
+	auth.Value = big.NewInt(int64(numTokens) * tokenPrice)
+
+	tx, err := instance.Mint(auth, big.NewInt(int64(numTokens)))
 	if err != nil {
 		return fmt.Errorf("error minting: %v", err)
 	}
 
-	log.Printf("Minted token to address: %s\n", toAddrHex)
 	log.Printf("Mint transaction hash: %s\n", tx.Hash().Hex())
 
 	return nil

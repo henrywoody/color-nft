@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/henrywoody/color-nft/client"
 	"github.com/henrywoody/color-nft/contract"
@@ -23,7 +24,7 @@ func deploy() error {
 	defer c.Close()
 
 	ctx := context.Background()
-	auth, err := c.GetAuth(ctx)
+	auth, err := c.GetAuth(ctx, os.Getenv("PRIVATE_KEY"))
 
 	address, tx, _, err := contract.DeployColorNFT(auth, c)
 	if err != nil {
