@@ -17,13 +17,30 @@ contract ColorNFT is ERC721URIStorage, Ownable {
 
     constructor() ERC721("ColorNFT", "CLR") {}
 
+    function withdraw() public onlyOwner {
+        uint balance = address(this).balance;
+        payable(msg.sender).transfer(balance);
+    }
+
+    function ownerMint(uint numTokens) public onlyOwner {
+        _freeMint(msg.sender, numTokens);
+    }
+
     function mint(uint numTokens) public payable {
         require(numTokens <= MAX_TOKEN_PURCHASE, "Number of tokens to mint cannot exceed MAX_TOKEN_PURCHASE");
-        require(_tokenIDs.current() + numTokens <= MAX_TOKENS, "Not enough tokens left");
         require(msg.value >= TOKEN_PRICE * numTokens, "Insufficient ether value for mint");
 
+        _freeMint(msg.sender, numTokens);
+    }
+
+    /**
+     * Mints the requested number of tokens to the given address. Checks that minting would not exceed maximum supply.
+     */
+    function _freeMint(address to, uint numTokens) private {
+        require(_tokenIDs.current() + numTokens <= MAX_TOKENS, "Not enough tokens left");
+
         for (uint i = 0; i < numTokens; i++) {
-            _safeMint(msg.sender, _tokenIDs.current());
+            _safeMint(to, _tokenIDs.current());
             _tokenIDs.increment();
         }
     }

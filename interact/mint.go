@@ -12,15 +12,7 @@ import (
 
 const tokenPrice int64 = 50_000_000_000_000_000 // must match that in Token.sol
 
-func main() {
-	ctx := context.Background()
-	numTokens := 1
-	if err := mint(ctx, numTokens, os.Getenv("PRIVATE_KEY")); err != nil {
-		panic(err)
-	}
-}
-
-func mint(ctx context.Context, numTokens int, privateKeyHex string) error {
+func Mint(ctx context.Context, numTokens int64, privateKeyHex string) error {
 	c, err := client.NewClient()
 	if err != nil {
 		return err
@@ -44,14 +36,40 @@ func mint(ctx context.Context, numTokens int, privateKeyHex string) error {
 		return err
 	}
 
-	auth.Value = big.NewInt(int64(numTokens) * tokenPrice)
+	auth.Value = big.NewInt(numTokens * tokenPrice)
 
-	tx, err := instance.Mint(auth, big.NewInt(int64(numTokens)))
+	tx, err := instance.Mint(auth, big.NewInt(numTokens))
 	if err != nil {
 		return fmt.Errorf("error minting: %v", err)
 	}
 
 	log.Printf("Mint transaction hash: %s\n", tx.Hash().Hex())
+
+	return nil
+}
+
+func OwnerMint(ctx context.Context, numTokens int64) error {
+	c, err := client.NewClient()
+	if err != nil {
+		return err
+	}
+
+	instance, err := c.GetContract(os.Getenv("CONTRACT_ADDRESS"))
+	if err != nil {
+		return err
+	}
+
+	auth, err := c.GetAuth(ctx, os.Getenv("PRIVATE_KEY"))
+	if err != nil {
+		return err
+	}
+
+	tx, err := instance.OwnerMint(auth, big.NewInt(numTokens))
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Withdraw transaction hash: %s\n", tx.Hash().Hex())
 
 	return nil
 }

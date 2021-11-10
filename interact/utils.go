@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -11,38 +10,6 @@ import (
 	"github.com/henrywoody/color-nft/client"
 	"github.com/henrywoody/color-nft/contract"
 )
-
-func GetTokenURI(ctx context.Context, tokenID int64) (string, error) {
-	instance, err := getContract()
-	if err != nil {
-		return "", err
-	}
-	callOpts, err := getCallOpts(ctx)
-	if err != nil {
-		return "", err
-	}
-	tokenURI, err := instance.TokenURI(callOpts, big.NewInt(tokenID))
-	if err != nil {
-		return "", err
-	}
-	return tokenURI, nil
-}
-
-func GetTokenOwner(ctx context.Context, tokenID int64) (string, error) {
-	instance, err := getContract()
-	if err != nil {
-		return "", err
-	}
-	callOpts, err := getCallOpts(ctx)
-	if err != nil {
-		return "", err
-	}
-	addr, err := instance.OwnerOf(callOpts, big.NewInt(tokenID))
-	if err != nil {
-		return "", err
-	}
-	return addr.Hex(), nil
-}
 
 func getContract() (*contract.ColorNFT, error) {
 	c, err := client.NewClient()
