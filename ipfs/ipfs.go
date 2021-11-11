@@ -51,7 +51,7 @@ func SpawnEphemeralNode(ctx context.Context) (*IPFSNode, error) {
 	// Create a Temporary Repo
 	repoPath, err := createTempRepo()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temp repo: %s", err)
+		return nil, fmt.Errorf("failed to create temp repo: %v", err)
 	}
 
 	// Spawning an ephemeral IPFS node
@@ -67,16 +67,16 @@ func setupPlugins(externalPluginsPath string) error {
 	// Load any external plugins if available on externalPluginsPath
 	plugins, err := loader.NewPluginLoader(filepath.Join(externalPluginsPath, "plugins"))
 	if err != nil {
-		return fmt.Errorf("error loading plugins: %s", err)
+		return fmt.Errorf("error loading plugins: %v", err)
 	}
 
 	// Load preloaded and external plugins
 	if err := plugins.Initialize(); err != nil {
-		return fmt.Errorf("error initializing plugins: %s", err)
+		return fmt.Errorf("error initializing plugins: %v", err)
 	}
 
 	if err := plugins.Inject(); err != nil {
-		return fmt.Errorf("error initializing plugins: %s", err)
+		return fmt.Errorf("error initializing plugins: %v", err)
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func setupPlugins(externalPluginsPath string) error {
 func createTempRepo() (string, error) {
 	repoPath, err := ioutil.TempDir("", "ipfs-shell")
 	if err != nil {
-		return "", fmt.Errorf("failed to get temp dir: %s", err)
+		return "", fmt.Errorf("failed to get temp dir: %v", err)
 	}
 
 	// Create a config with default options and a 2048 bit key
@@ -97,7 +97,7 @@ func createTempRepo() (string, error) {
 	// Create the repo with the config
 	err = fsrepo.Init(repoPath, cfg)
 	if err != nil {
-		return "", fmt.Errorf("failed to init ephemeral node: %s", err)
+		return "", fmt.Errorf("failed to init ephemeral node: %v", err)
 	}
 
 	return repoPath, nil
@@ -132,15 +132,29 @@ func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 func (n *IPFSNode) AddFile(ctx context.Context, inputFilePath string) (string, error) {
 	fileNode, err := getUnixfsNode(inputFilePath)
 	if err != nil {
-		return "", fmt.Errorf("Could not get File: %s", err)
+		return "", fmt.Errorf("Could not get file: %v", err)
 	}
 
 	cidFile, err := n.api.Unixfs().Add(ctx, fileNode)
 	if err != nil {
-		return "", fmt.Errorf("Could not add File: %s", err)
+		return "", fmt.Errorf("Could not add file: %v", err)
 	}
 
 	return cidFile.String(), nil
+}
+
+func (n *IPFSNode) AddDirectory(ctx context.Context, inputDirPath string) (string, error) {
+	dirNode, err := getUnixfsNode(inputDirPath)
+	if err != nil {
+		return "", fmt.Errorf("Could not get directory: %v", err)
+	}
+
+	cidDir, err := n.api.Unixfs().Add(ctx, dirNode)
+	if err != nil {
+		return "", fmt.Errorf("Could not add directory: %v", err)
+	}
+
+	return cidDir.String(), nil
 }
 
 func getUnixfsNode(path string) (files.Node, error) {
