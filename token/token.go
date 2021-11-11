@@ -16,6 +16,7 @@ type Token struct {
 }
 
 type TokenMetaData struct {
+	Name  string `json:"name"`
 	Image string `json:"image"`
 	Color string `json:"color"`
 }
@@ -26,6 +27,7 @@ func NewToken(name, imagesDirPath, metaDataDirPath string) *Token {
 		imagesDirPath:   imagesDirPath,
 		metaDataDirPath: metaDataDirPath,
 		metaData: &TokenMetaData{
+			Name:  name,
 			Color: getRandomColor(),
 		},
 	}
@@ -43,6 +45,13 @@ func (t *Token) SetImageURI(imageURI string) {
 	t.metaData.Image = imageURI
 }
 
+func (t *Token) GenerateImage() error {
+	if err := os.WriteFile(t.ImageFilePath(), []byte(t.Image()), 0664); err != nil {
+		return fmt.Errorf("failed to create image file: %v", err)
+	}
+	return nil
+}
+
 const imageTmpl = `<?xml version="1.0"?>
 <svg width="1600" height="900"
      xmlns="http://www.w3.org/2000/svg"
@@ -51,12 +60,8 @@ const imageTmpl = `<?xml version="1.0"?>
 </svg>
 `
 
-func (t *Token) GenerateImage() error {
-	fileContent := fmt.Sprintf(imageTmpl, t.metaData.Color)
-	if err := os.WriteFile(t.ImageFilePath(), []byte(fileContent), 0664); err != nil {
-		return fmt.Errorf("failed to create image file: %v", err)
-	}
-	return nil
+func (t *Token) Image() string {
+	return fmt.Sprintf(imageTmpl, t.metaData.Color)
 }
 
 func (t *Token) WriteMetaData() error {

@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/henrywoody/color-nft/ipfs"
@@ -33,11 +36,17 @@ func main() {
 		panic(fmt.Errorf("error spawning IPFS node: %v", err))
 	}
 
+	tokens := make([]*token.Token, maxTokens)
 	for i := 0; i < maxTokens; i++ {
-		if err := createTokenData(ctx, i, ipfsNode); err != nil {
+		t, err := createToken(ctx, i, ipfsNode)
+		if err != nil {
 			panic(fmt.Errorf("error creating token %d: %v", i, err))
 		}
+		tokens[i] = t
 	}
+
+	provenance := calculateProvenanceHash(tokens)
+	log.Printf("Provenance Hash: %s\n", provenance)
 
 	dirURI, err := ipfsNode.AddDirectory(ctx, metaDataDirPath)
 	if err != nil {
@@ -47,24 +56,34 @@ func main() {
 	log.Printf("MetaData IPFS Directory: %s\n", dirURI)
 }
 
-func createTokenData(ctx context.Context, generateID int, ipfsNode *ipfs.IPFSNode) error {
+func createToken(ctx context.Context, generateID int, ipfsNode *ipfs.IPFSNode) (*token.Token, error) {
 	t := token.NewToken(strconv.Itoa(generateID), imagesDirPath, metaDataDirPath)
 
 	if err := t.GenerateImage(); err != nil {
-		return err
+		return nil, err
 	}
 
 	imageURI, err := ipfsNode.AddFile(ctx, t.ImageFilePath())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	t.SetImageURI(imageURI)
 
 	if err := t.WriteMetaData(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return t, nil
+}
+
+func calculateProvenanceHash(tokens []*token.Token) string {
+	var b strings.Builder
+	for _, t := range tokens {
+		hash := sha256.Sum256([]byte(t.Image()))
+		b.WriteString(hex.EncodeToString(hash[:]))
+	}
+	hash := sha256.Sum256([]byte(b.String()))
+	return hex.EncodeToString(hash[:])
 }
 
 func mkDirIfNotExists(dirPath string) error {
