@@ -7,40 +7,42 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/henrywoody/color-nft/ipfs"
 	"github.com/henrywoody/color-nft/token"
+	"github.com/henrywoody/color-nft/utils"
 )
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-const imagesDirPath = "images"
-const metaDataDirPath = "metadata"
-const maxTokens = 100 // must match that in Token.sol
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	mkDirIfNotExists(imagesDirPath)
-	mkDirIfNotExists(metaDataDirPath)
+	if err := generateTokens(ctx); err != nil {
+		panic(err)
+	}
+}
+
+func generateTokens(ctx context.Context) error {
+	utils.RecursiveMkDirIfNotExists(utils.ImagesDirPath)
+	utils.RecursiveMkDirIfNotExists(utils.MetaDataDirPath)
 
 	ipfsNode, err := ipfs.SpawnNode(ctx)
 	if err != nil {
-		panic(fmt.Errorf("error spawning IPFS node: %v", err))
+		return fmt.Errorf("error spawning IPFS node: %v", err)
 	}
 
-	tokens := make([]*token.Token, maxTokens)
-	for i := 0; i < maxTokens; i++ {
+	tokens := make([]*token.Token, utils.MaxTokens)
+	for i := 0; i < utils.MaxTokens; i++ {
 		t, err := createToken(ctx, i, ipfsNode)
 		if err != nil {
-			panic(fmt.Errorf("error creating token %d: %v", i, err))
+			return fmt.Errorf("error creating token %d: %v", i, err)
 		}
 		tokens[i] = t
 	}
@@ -48,16 +50,11 @@ func main() {
 	provenance := calculateProvenanceHash(tokens)
 	log.Printf("Provenance Hash: %s\n", provenance)
 
-	dirURI, err := ipfsNode.AddDirectory(ctx, metaDataDirPath)
-	if err != nil {
-		panic(err)
-	}
-
-	log.Printf("MetaData IPFS Directory: %s\n", dirURI)
+	return nil
 }
 
 func createToken(ctx context.Context, generateID int, ipfsNode *ipfs.IPFSNode) (*token.Token, error) {
-	t := token.NewToken(strconv.Itoa(generateID), imagesDirPath, metaDataDirPath)
+	t := token.NewToken(strconv.Itoa(generateID), utils.ImagesDirPath, utils.MetaDataDirPath)
 
 	if err := t.GenerateImage(); err != nil {
 		return nil, err
@@ -84,26 +81,4 @@ func calculateProvenanceHash(tokens []*token.Token) string {
 	}
 	hash := sha256.Sum256([]byte(b.String()))
 	return hex.EncodeToString(hash[:])
-}
-
-func mkDirIfNotExists(dirPath string) error {
-	exists, err := checkDirExists(dirPath)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-	return os.Mkdir(dirPath, 0777)
-}
-
-func checkDirExists(dirPath string) (bool, error) {
-	_, err := os.Stat(dirPath)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }

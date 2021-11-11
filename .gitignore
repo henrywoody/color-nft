@@ -22,6 +22,6 @@ sol_deps/
 .envrc
 
 # Generated files
-images/
-metadata/
+image-files/
+metadata-files/
 Token-CompileReady.sol
