@@ -5,9 +5,8 @@ pragma solidity ^0.8.0;
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/utils/Counters.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract ColorNFT is ERC721URIStorage, Ownable {
+contract ColorNFT is ERC721, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIDs;
 
@@ -15,7 +14,17 @@ contract ColorNFT is ERC721URIStorage, Ownable {
     uint public constant MAX_TOKEN_PURCHASE = 20;
     uint256 public constant MAX_TOKENS = 100;
 
+    string public baseURI = "";
+
     constructor() ERC721("ColorNFT", "CLR") {}
+
+    function setBaseURI(string memory newBaseURI) public onlyOwner {
+        baseURI = newBaseURI;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
+    }
 
     function withdraw() public onlyOwner {
         uint balance = address(this).balance;

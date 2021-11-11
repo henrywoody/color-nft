@@ -6,10 +6,11 @@ import (
 )
 
 func GetTokenURI(ctx context.Context, tokenID int64) (string, error) {
-	instance, err := getContract()
+	c, instance, err := getContract()
 	if err != nil {
 		return "", err
 	}
+	defer c.Close()
 	callOpts, err := getCallOpts(ctx)
 	if err != nil {
 		return "", err
@@ -22,10 +23,11 @@ func GetTokenURI(ctx context.Context, tokenID int64) (string, error) {
 }
 
 func GetTokenOwner(ctx context.Context, tokenID int64) (string, error) {
-	instance, err := getContract()
+	c, instance, err := getContract()
 	if err != nil {
 		return "", err
 	}
+	defer c.Close()
 	callOpts, err := getCallOpts(ctx)
 	if err != nil {
 		return "", err

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -11,19 +12,25 @@ import (
 	"github.com/henrywoody/color-nft/contract"
 )
 
-func getContract() (*contract.ColorNFT, error) {
+func getContract() (*client.Client, *contract.ColorNFT, error) {
 	c, err := client.NewClient()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	contractAddrHex := os.Getenv("CONTRACT_ADDRESS")
 	instance, err := c.GetContract(contractAddrHex)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return instance, nil
+	name, err := instance.Name(nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error getting name: %v", err)
+	}
+	log.Printf("Found contract: %s (%s)\n", name, contractAddrHex)
+
+	return c, instance, nil
 }
 
 func getCallOpts(ctx context.Context) (*bind.CallOpts, error) {

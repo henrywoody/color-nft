@@ -6,30 +6,16 @@ import (
 	"log"
 	"math/big"
 	"os"
-
-	"github.com/henrywoody/color-nft/client"
 )
 
 const tokenPrice int64 = 50_000_000_000_000_000 // must match that in Token.sol
 
 func Mint(ctx context.Context, numTokens int64, privateKeyHex string) error {
-	c, err := client.NewClient()
+	c, instance, err := getContract()
 	if err != nil {
 		return err
 	}
 	defer c.Close()
-
-	contractAddrHex := os.Getenv("CONTRACT_ADDRESS")
-	instance, err := c.GetContract(contractAddrHex)
-	if err != nil {
-		return err
-	}
-
-	name, err := instance.Name(nil)
-	if err != nil {
-		return fmt.Errorf("error getting name: %v", err)
-	}
-	log.Printf("Found contract: %s (%s)\n", name, contractAddrHex)
 
 	auth, err := c.GetAuth(ctx, privateKeyHex)
 	if err != nil {
@@ -49,15 +35,11 @@ func Mint(ctx context.Context, numTokens int64, privateKeyHex string) error {
 }
 
 func OwnerMint(ctx context.Context, numTokens int64) error {
-	c, err := client.NewClient()
+	c, instance, err := getContract()
 	if err != nil {
 		return err
 	}
-
-	instance, err := c.GetContract(os.Getenv("CONTRACT_ADDRESS"))
-	if err != nil {
-		return err
-	}
+	defer c.Close()
 
 	auth, err := c.GetAuth(ctx, os.Getenv("PRIVATE_KEY"))
 	if err != nil {

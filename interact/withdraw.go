@@ -4,20 +4,14 @@ import (
 	"context"
 	"log"
 	"os"
-
-	"github.com/henrywoody/color-nft/client"
 )
 
 func Withdraw(ctx context.Context) error {
-	c, err := client.NewClient()
+	c, instance, err := getContract()
 	if err != nil {
 		return err
 	}
-
-	instance, err := c.GetContract(os.Getenv("CONTRACT_ADDRESS"))
-	if err != nil {
-		return err
-	}
+	defer c.Close()
 
 	auth, err := c.GetAuth(ctx, os.Getenv("PRIVATE_KEY"))
 	if err != nil {
