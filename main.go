@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -18,66 +17,54 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-type TokenMetaData struct {
-	Image string `json:"image"`
-	Color string `json:"color"`
-}
-
 const imagesDirPath = "images"
 const metaDataDirPath = "metadata"
+const maxTokens = 100 // must match that in Token.sol
 
 func main() {
-	var toAddrHex string
-	flag.StringVar(&toAddrHex, "to", "", "The address to send the token to.")
-	flag.Parse()
-
-	if toAddrHex == "" {
-		log.Fatal("A `to` address is required.")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	_, err := createTokenData(ctx)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func createTokenData(ctx context.Context) (string, error) {
-	ipfsNode, err := ipfs.SpawnNode(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to spawn ephemeral node: %s", err)
-	}
 
 	mkDirIfNotExists(imagesDirPath)
 	mkDirIfNotExists(metaDataDirPath)
 
-	now := time.Now().Unix()
-	t := token.NewToken(strconv.Itoa(int(now)), imagesDirPath, metaDataDirPath)
+	ipfsNode, err := ipfs.SpawnNode(ctx)
+	if err != nil {
+		panic(fmt.Errorf("error spawning IPFS node: %v", err))
+	}
+
+	for i := 0; i < maxTokens; i++ {
+		if err := createTokenData(ctx, i, ipfsNode); err != nil {
+			panic(fmt.Errorf("error creating token %d: %v", i, err))
+		}
+	}
+
+	dirURI, err := ipfsNode.AddDirectory(ctx, metaDataDirPath)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("MetaData IPFS Directory: %s\n", dirURI)
+}
+
+func createTokenData(ctx context.Context, generateID int, ipfsNode *ipfs.IPFSNode) error {
+	t := token.NewToken(strconv.Itoa(generateID), imagesDirPath, metaDataDirPath)
 
 	if err := t.GenerateImage(); err != nil {
-		return "", err
+		return err
 	}
 
 	imageURI, err := ipfsNode.AddFile(ctx, t.ImageFilePath())
 	if err != nil {
-		return "", err
+		return err
 	}
 	t.SetImageURI(imageURI)
 
 	if err := t.WriteMetaData(); err != nil {
-		return "", err
+		return err
 	}
 
-	metaDataURI, err := ipfsNode.AddFile(ctx, t.MetaDataFilePath())
-	if err != nil {
-		return "", err
-	}
-
-	log.Printf("Created token with metadata URI: %s\n", metaDataURI)
-
-	return metaDataURI, nil
+	return nil
 }
 
 func mkDirIfNotExists(dirPath string) error {

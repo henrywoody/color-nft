@@ -77,7 +77,7 @@ func (t *Token) ImageFilePath() string {
 }
 
 func (t *Token) MetaDataFilePath() string {
-	return filepath.Join(t.metaDataDirPath, t.name+".json")
+	return filepath.Join(t.metaDataDirPath, t.name)
 }
 
 func getRandomColor() string {
