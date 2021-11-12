@@ -2,16 +2,14 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/henrywoody/color-nft/ipfs"
+	"github.com/henrywoody/color-nft/provenance"
 	"github.com/henrywoody/color-nft/token"
 	"github.com/henrywoody/color-nft/utils"
 )
@@ -47,8 +45,8 @@ func generateTokens(ctx context.Context) error {
 		tokens[i] = t
 	}
 
-	provenance := calculateProvenanceHash(tokens)
-	log.Printf("Provenance Hash: %s\n", provenance)
+	provenanceHash := provenance.CalculateProvenanceHashFromTokens(tokens)
+	log.Printf("Provenance Hash: %s\n", provenanceHash)
 
 	return nil
 }
@@ -71,14 +69,4 @@ func createToken(ctx context.Context, generateID int, ipfsNode *ipfs.IPFSNode) (
 	}
 
 	return t, nil
-}
-
-func calculateProvenanceHash(tokens []*token.Token) string {
-	var b strings.Builder
-	for _, t := range tokens {
-		hash := sha256.Sum256([]byte(t.Image()))
-		b.WriteString(hex.EncodeToString(hash[:]))
-	}
-	hash := sha256.Sum256([]byte(b.String()))
-	return hex.EncodeToString(hash[:])
 }

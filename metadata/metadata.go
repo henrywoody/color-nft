@@ -11,6 +11,8 @@ import (
 	"strconv"
 
 	"github.com/henrywoody/color-nft/ipfs"
+	"github.com/henrywoody/color-nft/metadatautils"
+	"github.com/henrywoody/color-nft/provenance"
 	"github.com/henrywoody/color-nft/token"
 	"github.com/henrywoody/color-nft/utils"
 )
@@ -20,7 +22,7 @@ func main() {
 	flag.IntVar(&startIndex, "i", -1, "The start index for remapping.")
 	flag.Parse()
 
-	if err := remapMetaDataFiles(startIndex); err != nil {
+	if err := ReindexMetaDataFiles(startIndex); err != nil {
 		panic(err)
 	}
 
@@ -37,43 +39,31 @@ func main() {
 	log.Printf("MetaData IPFS Directory: %s\n", dirURI)
 }
 
-func remapMetaDataFiles(startIndex int) error {
+func ReindexMetaDataFiles(startIndex int) error {
 	if !(startIndex >= 0 && startIndex < utils.MaxTokens) {
 		return fmt.Errorf("invalid startIndex, must be on interval [0, %d)", utils.MaxTokens)
 	}
 
-	utils.RecursiveMkDirIfNotExists(utils.FinalMetaDataDirPath)
-
-	dir, err := os.ReadDir(utils.MetaDataDirPath)
+	metaDataObjects, err := metadatautils.GetMetaDataObjects(utils.MetaDataDirPath)
 	if err != nil {
 		return err
 	}
 
-	metaDataObjects := make([]*token.TokenMetaData, 0, utils.MaxTokens)
-
-	for _, entry := range dir {
-		if entry.IsDir() {
-			continue
-		}
-
-		filePath := filepath.Join(utils.MetaDataDirPath, entry.Name())
-		file, err := os.Open(filePath)
-		if err != nil {
-			return err
-		}
-		var metaData token.TokenMetaData
-		if err := json.NewDecoder(file).Decode(&metaData); err != nil {
-			return err
-		}
-		metaDataObjects = append(metaDataObjects, &metaData)
+	utils.RecursiveMkDirIfNotExists(utils.FinalMetaDataDirPath)
+	if err := reindexAndWriteMetaDataObjects(metaDataObjects, startIndex); err != nil {
+		return err
 	}
 
+	return nil
+}
+
+func reindexAndWriteMetaDataObjects(metaDataObjects []*token.TokenMetaData, startIndex int) error {
 	for _, metaData := range metaDataObjects {
 		originalID, err := strconv.Atoi(metaData.Name)
 		if err != nil {
 			return err
 		}
-		tokenID := mod(originalID-startIndex, utils.MaxTokens)
+		tokenID := provenance.TokenIDFromOriginalID(originalID, startIndex)
 		metaData.Name = strconv.Itoa(tokenID)
 
 		file, err := os.Create(filepath.Join(utils.FinalMetaDataDirPath, metaData.Name))
@@ -84,10 +74,5 @@ func remapMetaDataFiles(startIndex int) error {
 			return err
 		}
 	}
-
 	return nil
-}
-
-func mod(n, m int) int {
-	return ((n % m) + m) % m
 }
