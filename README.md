@@ -1,6 +1,6 @@
 # Color NFT
 
-A simple ERC721 non-fungible token (NFT).
+A simple ERC721 non-fungible token (NFT). This contract is designed to have a limited number of tokens. All token images can be generated before minting and made public while keeping the minting process random through the use of an offset index and provenance hash for verification.
 
 ## References
 
@@ -96,6 +96,13 @@ Note that the `interact` script takes a bit of time to build and might be used f
 
     ```shell
     ./interact.exe -c token-info -t 0
+    ```
+
+12. Verify the provenance hash.
+
+    ```shell
+    go run ./verifyprovenance -i 42 -ih QmYzP8bKDv94XmrVAacDzG1w5fHjuMh9uzCjbgn8HRzepT -ph 9882878611ce91e786840e69c91bef706013e0a4bb49a46685b954228d2cd8d2
+    # => Provenance Hash is VALID
     ```
 
 ### Managing Accounts
