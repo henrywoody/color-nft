@@ -16,7 +16,7 @@ contract ColorNFT is ERC721, Ownable {
 
     string public baseURI;
     string public provenanceHash;
-    uint256 public startIndex;
+    uint256 public startIndex = MAX_TOKENS;
     uint256 public startIndexBlockNumber;
     uint256 public revealTimestamp;
 
@@ -73,7 +73,7 @@ contract ColorNFT is ERC721, Ownable {
     }
 
     function setStartIndex() public {
-        require(startIndex == 0, "Start index is already set");
+        require(startIndex == MAX_TOKENS, "Start index is already set");
         require(startIndexBlockNumber != 0, "Start index block must be set");
 
         // make sure contract has access to the block hash (contract only has access to the last 256 block hashes)
