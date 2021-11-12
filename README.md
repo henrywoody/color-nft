@@ -30,6 +30,8 @@ Console: https://geth.ethereum.org/docs/rpc/server
 
 ### Development
 
+Note that the `interact` script takes a bit of time to build and might be used frequently, it is therefore recommended to create a build of the `interact` package before use (rather than using `go run`).
+
 1. Start development Ethereum node.
 
    ```shell
@@ -50,18 +52,51 @@ Console: https://geth.ethereum.org/docs/rpc/server
    go run ./deploy
    ```
 
-5. Create tokens using the main package.
+5. Create tokens using the generate package.
 
    ```shell
-   go run main.go
+   go run ./generate
+   # => Provenance Hash: 9882878611ce91e786840e69c91bef706013e0a4bb49a46685b954228d2cd8d2
    ```
 
-6. Query the contract.
+6. Set the provenance on the contract using the output of the previous step.
 
    ```shell
-   go build -o interact.exe ./interact # this one takes a while to compile so `go run` is not recommended
-   ./interact.exe -t 0
+   ./interact.exe -c set-provenance-hash -p 9882878611ce91e786840e69c91bef706013e0a4bb49a46685b954228d2cd8d2
    ```
+
+7. Mint tokens.
+
+   ```shell
+   ./interact.exe -c mint -n 20
+   ```
+
+8. Once the `startIndexBlockNumber` has been set on the contract (first mint after the `revealTimestamp` or on the last mint when max tokens has been reached), set the `startIndex` on the contract.
+
+   ```shell
+   ./interact.exe -c set-start-index
+   ```
+
+9. Get the `startIndex` from the contract and use that to remap the token metadata files add the metadata files to IPFS.
+
+   ```shell
+   ./interact.exe -c get-start-index
+   # => Start index: 42
+   go run ./metadata -i 42
+   # => MetaData IPFS Directory: /ipfs/QmYzP8bKDv94XmrVAacDzG1w5fHjuMh9uzCjbgn8HRzepT
+   ```
+
+10. Set the `baseURI` on the contract using the output from the previous step (make sure to add a trailing slash to the URI).
+
+    ```shell
+    ./interact.exe -c set-base-uri -u "/ipfs/QmYzP8bKDv94XmrVAacDzG1w5fHjuMh9uzCjbgn8HRzepT/"
+    ```
+
+11. Query the contract for info on a token.
+
+    ```shell
+    ./interact.exe -c token-info -t 0
+    ```
 
 ### Managing Accounts
 
